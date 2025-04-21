@@ -1,60 +1,93 @@
-
 import streamlit as st
-import pandas as pd
 import matplotlib.pyplot as plt
-import json
 
-st.set_page_config(page_title="💰 Cloud Cost Optimization", layout="wide")
+st.set_page_config(page_title="💡 Cloud Cost Estimator", layout="wide")
+st.title("💡 Interactive Cloud Cost Estimator")
+st.caption("Estimate cloud spend and get optimization suggestions based on your usage.")
 
-# Load JSON data
-with open("mock_billing.json") as f:
-    raw_data = json.load(f)
-df = pd.DataFrame(raw_data)
-df["date"] = pd.to_datetime(df["date"])
+# ---------------------------
+# Constants (simplified rates)
+# ---------------------------
+RATES = {
+    "AWS": {"cpu_hr": 0.01, "ram_hr": 0.005, "storage_gb_mo": 0.10, "req_cost": 0.001},
+    "GCP": {"cpu_hr": 0.009, "ram_hr": 0.0045, "storage_gb_mo": 0.09, "req_cost": 0.0009},
+    "Azure": {"cpu_hr": 0.011, "ram_hr": 0.0055, "storage_gb_mo": 0.11, "req_cost": 0.0011}
+}
 
-# Sidebar Filters
-st.sidebar.header("🔎 Filter")
-selected_project = st.sidebar.selectbox("Project", ["All"] + sorted(df["project"].unique()))
-selected_provider = st.sidebar.selectbox("Cloud Provider", ["All"] + sorted(df["cloud_provider"].unique()))
+# ---------------------------
+# User Inputs
+# ---------------------------
+st.sidebar.header("📥 Your Configuration")
 
-filtered_df = df.copy()
-if selected_project != "All":
-    filtered_df = filtered_df[filtered_df["project"] == selected_project]
-if selected_provider != "All":
-    filtered_df = filtered_df[filtered_df["cloud_provider"] == selected_provider]
+provider = st.sidebar.selectbox("Cloud Provider", ["AWS", "GCP", "Azure"])
+cpu = st.sidebar.slider("vCPUs", 1, 64, 4)
+ram = st.sidebar.slider("RAM (GB)", 1, 256, 16)
+storage = st.sidebar.slider("Storage (GB)", 10, 2000, 100)
+users = st.sidebar.number_input("Users", 10, 100000, 500)
+frequency = st.sidebar.selectbox("Request Frequency", ["per minute", "per hour", "per day"])
+duration_days = st.sidebar.slider("Usage Duration (days/month)", 1, 31, 30)
 
-# KPI Summary
-st.title("💰 Cloud Cost Optimization Dashboard")
-st.subheader("🔢 Cost Summary")
+# ---------------------------
+# Calculate Usage
+# ---------------------------
+hours = duration_days * 24
+if frequency == "per minute":
+    total_requests = users * 60 * hours
+elif frequency == "per hour":
+    total_requests = users * hours
+else:
+    total_requests = users * duration_days
+
+# Pricing
+rate = RATES[provider]
+cpu_cost = cpu * rate["cpu_hr"] * hours
+ram_cost = ram * rate["ram_hr"] * hours
+storage_cost = storage * rate["storage_gb_mo"]
+request_cost = total_requests * rate["req_cost"]
+total_cost = cpu_cost + ram_cost + storage_cost + request_cost
+
+# ---------------------------
+# Output Summary
+# ---------------------------
+st.header("📊 Estimated Monthly Cost")
 col1, col2 = st.columns(2)
-col1.metric("Total Spend", f"${filtered_df['cost'].sum():,.2f}")
-col2.metric("Avg CPU Utilization", f"{filtered_df['cpu_utilization'].mean() * 100:.2f}%")
+col1.metric("💵 Total Cost", f"${total_cost:,.2f}")
+col2.metric("📨 Requests Estimated", f"{total_requests:,}")
 
-# Chart: Cost by Service
-st.markdown("### 📈 Cost Trend by Service")
-pivot = filtered_df.pivot_table(index="date", columns="service", values="cost", aggfunc="sum")
+# ---------------------------
+# Cost Breakdown Chart
+# ---------------------------
+st.markdown("### 🧾 Cost Breakdown")
+labels = ["CPU", "RAM", "Storage", "Request Load"]
+values = [cpu_cost, ram_cost, storage_cost, request_cost]
 fig, ax = plt.subplots()
-pivot.plot(ax=ax, marker='o')
-ax.set_ylabel("Cost ($)")
-ax.set_title("Daily Cost per Service")
+ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=140)
+ax.axis("equal")
 st.pyplot(fig)
 
-# Optimization Recommendations
-st.markdown("### 🧠 Optimization Recommendations")
-recommendations = []
+# ---------------------------
+# Optimization Tips
+# ---------------------------
+st.markdown("### 🧠 Optimization Suggestions")
+tips = []
 
-for _, row in filtered_df.iterrows():
-    if row["cpu_utilization"] < 0.3:
-        recommendations.append(f"🔻 **{row['service']}** in *{row['project']}* is underutilized. Consider downscaling or stopping.")
-    if row["cost"] > 200:
-        recommendations.append(f"💸 High cost alert: **{row['service']}** in *{row['project']}* is costing ${row['cost']:.2f}/day.")
+if cpu_cost > 100:
+    tips.append("🔻 Consider reducing vCPU or using burstable instances.")
+if ram_cost > 50 and ram / cpu > 4:
+    tips.append("💡 You might be over-allocating RAM relative to CPU.")
+if request_cost > 200:
+    tips.append("📉 Use caching or CDN to reduce frequent backend hits.")
+if storage_cost > 50 and storage > 1000:
+    tips.append("🧹 Archive cold data to cheaper storage tiers (e.g., S3 Glacier).")
 
-if recommendations:
-    for r in recommendations:
-        st.write(r)
+if tips:
+    for tip in tips:
+        st.write(tip)
 else:
-    st.success("✅ All services are operating efficiently.")
+    st.success("✅ Your configuration looks optimized!")
 
-# Raw Data
-st.markdown("### 📄 Raw Billing Data")
-st.dataframe(filtered_df)
+# ---------------------------
+# Footer
+# ---------------------------
+st.markdown("---")
+st.caption("Built with ❤️ for cloud planning and budgeting.")
