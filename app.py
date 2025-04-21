@@ -63,14 +63,23 @@ col2.metric("📨 Estimated Requests", f"{total_requests:,}")
 st.progress(min(1.0, total_cost / 500))  # visual progress indicator
 
 # ---------------------------
-# Cost Breakdown Pie Chart
+# Cost Breakdown Bar Chart
 # ---------------------------
-st.markdown("### 📊 Cost Breakdown")
-labels = ["CPU", "RAM", "Storage", "Requests"]
-values = [cpu_cost, ram_cost, storage_cost, request_cost]
-fig, ax = plt.subplots()
-ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=140)
-ax.axis("equal")
+st.markdown("### 📊 Cost Breakdown (in USD)")
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+cost_data = pd.DataFrame({
+    "Component": ["CPU", "RAM", "Storage", "Requests"],
+    "Cost (USD)": [cpu_cost, ram_cost, storage_cost, request_cost]
+})
+
+fig, ax = plt.subplots(figsize=(8, 4))
+bars = sns.barplot(data=cost_data, x="Cost (USD)", y="Component", ax=ax)
+ax.set_title("Component-wise Cloud Cost")
+ax.bar_label(bars.containers[0], fmt="$%.2f")
 st.pyplot(fig)
 
 # ---------------------------
