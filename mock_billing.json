@@ -1,0 +1,11 @@
+[
+    {"date": "2025-04-01", "project": "Analytics", "cloud_provider": "GCP", "service": "BigQuery", "cost": 120, "cpu_utilization": 0.65},
+    {"date": "2025-04-01", "project": "WebApp", "cloud_provider": "AWS", "service": "EC2", "cost": 250, "cpu_utilization": 0.20},
+    {"date": "2025-04-01", "project": "WebApp", "cloud_provider": "AWS", "service": "S3", "cost": 80, "cpu_utilization": 0.90},
+    {"date": "2025-04-01", "project": "Infra", "cloud_provider": "Azure", "service": "VM", "cost": 150, "cpu_utilization": 0.18},
+    {"date": "2025-04-02", "project": "Analytics", "cloud_provider": "GCP", "service": "BigQuery", "cost": 130, "cpu_utilization": 0.72},
+    {"date": "2025-04-02", "project": "WebApp", "cloud_provider": "AWS", "service": "EC2", "cost": 240, "cpu_utilization": 0.22},
+    {"date": "2025-04-02", "project": "WebApp", "cloud_provider": "AWS", "service": "S3", "cost": 78, "cpu_utilization": 0.85},
+    {"date": "2025-04-02", "project": "Infra", "cloud_provider": "Azure", "service": "VM", "cost": 160, "cpu_utilization": 0.25}
+  ]
+  
